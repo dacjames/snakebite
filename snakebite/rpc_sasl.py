@@ -81,7 +81,7 @@ class SaslRpcClient:
 
     def connect(self):
         # use service name component from principal
-        service = re.split('[\/@]', str(HDFSConfig.hdfs_namenode_principal))[0]
+        service, host, realm = re.split('[\/@]', str(HDFSConfig.hdfs_namenode_principal))
 
         negotiate = RpcSaslProto()
         negotiate.state = 1
@@ -89,7 +89,7 @@ class SaslRpcClient:
 
         self.sasl = sasl.Client()
         self.sasl.setAttr("service", service)
-        self.sasl.setAttr("host", self._trans.host)
+        self.sasl.setAttr("host", host)
         self.sasl.init()
 
         # do while true
@@ -116,11 +116,11 @@ class SaslRpcClient:
                     auth_method.mechanism = chosen_mech
                     auth_method.method = auth.method
                     auth_method.protocol = auth.protocol
-                    auth_method.serverId = self._trans.host
+                    auth_method.serverId = auth.serverId
 
             self._send_sasl_message(initiate)
             continue
-           
+
           if res.state == 3:
             res_token = self._evaluate_token(res)
             response = RpcSaslProto()
@@ -137,7 +137,7 @@ class SaslRpcClient:
         if not ret:
           raise Exception("Bad SASL results: %s" % (self.sasl.getError()))
 
-        return response 
+        return response
 
     def wrap(self, message):
         ret, encoded = self.sasl.encode(message)
