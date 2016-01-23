@@ -81,7 +81,10 @@ class SaslRpcClient:
 
     def connect(self):
         # use service name component from principal
-        service, host, realm = re.split('[\/@]', str(HDFSConfig.hdfs_namenode_principal))
+        try:
+            service, host, realm = re.split('[\/@]', str(HDFSConfig.hdfs_namenode_principal))
+        except ValueError:
+            raise Exception("Error parsing kerberos principal: %s" % repr(HDFSConfig.hdfs_namenode_principal))
 
         negotiate = RpcSaslProto()
         negotiate.state = 1
@@ -104,6 +107,8 @@ class SaslRpcClient:
             log.debug("Available mechs: %s" % (",".join(mechs)))
             s_mechs = str(",".join(mechs))
             ret, chosen_mech, initial_response = self.sasl.start(s_mechs)
+            if not ret:
+                raise Exception("Sasl failed to start: %s" % self.sasl.getError())
             log.debug("Chosen mech: %s" % chosen_mech)
 
             initiate = RpcSaslProto()
