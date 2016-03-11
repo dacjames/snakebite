@@ -83,6 +83,8 @@ class SaslRpcClient:
         # use service name component from principal
         try:
             service, host, realm = re.split('[\/@]', str(HDFSConfig.hdfs_namenode_principal))
+            if host.lower() == '_host':
+                host = self._trans.host
         except ValueError:
             raise Exception("Error parsing kerberos principal: %s" % repr(HDFSConfig.hdfs_namenode_principal))
 
